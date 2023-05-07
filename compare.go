@@ -86,10 +86,16 @@ func compareUserProfileBindingRules() UpBindingReport {
 		if len(diffs) > 0 {
 			rpt.Diffs = append(rpt.Diffs, diffs...)
 		}
-
+		delete(configData, tmpk1)
 	}
+	// TODO:
 	// 获取在config中有而csv中没有的userProfile的冗余配置
-
+	for k, _ := range configData {
+		up := k
+		d := Diff{}
+		d.Msg = fmt.Sprintf("config userProfile not found in csv:%v", up)
+		rpt.Diffs = append(rpt.Diffs, d)
+	}
 	return rpt
 }
 
@@ -106,7 +112,7 @@ func checkRuleMatchedBySameUp(v1 []CsvRule, v2 []ConfigRule) []Diff {
 	}
 	for k1, d1 := range csvmp {
 		d2, ok := cfgmp[k1]
-		if !ok {
+		if !ok { // csv中有，而config中没有的配置
 			d := Diff{}
 			d.CsvPara = d1
 			d.Msg = "csv rule not found in config"
@@ -114,6 +120,7 @@ func checkRuleMatchedBySameUp(v1 []CsvRule, v2 []ConfigRule) []Diff {
 			continue
 			//log.Printf("find rule diff: csv rule not found in config:%v\n", d1.prt())
 		} else {
+			// 检查配置参数是否一致
 			if !startCheckRule(d1, d2) {
 				d := Diff{}
 				d.CsvPara = d1
@@ -122,7 +129,18 @@ func checkRuleMatchedBySameUp(v1 []CsvRule, v2 []ConfigRule) []Diff {
 				res = append(res, d)
 				continue
 			}
+			// 删除cfgmp中已查找到的配置
+			delete(cfgmp, k1)
 		}
+	}
+	// config中有而csv中没有的配置
+	for _, v := range cfgmp {
+		r := v
+		d := Diff{
+			Msg:        "config rule not found in csv",
+			ConfigPara: r,
+		}
+		res = append(res, d)
 	}
 	return res
 }
@@ -164,7 +182,15 @@ func compareFilters() FilterReport {
 			if len(diffs) > 0 {
 				rpt.FilterDiffs = append(rpt.FilterDiffs, diffs...)
 			}
+			delete(configRuleDefMap, kcsv)
 		}
+	}
+	for k, _ := range configRuleDefMap {
+		rk := k
+		d := FilterDiff{
+			Msg: fmt.Sprintf("config group:%v not found in csv", rk),
+		}
+		rpt.FilterDiffs = append(rpt.FilterDiffs, d)
 	}
 	return rpt
 }

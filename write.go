@@ -41,7 +41,8 @@ var (
 
 	// rules
 	configRuleCount = 0
-	configRuleMap   = make(map[string][]ConfigRule)
+	// key：userProfile
+	configRuleMap = make(map[string][]ConfigRule)
 
 	// ruledef
 	ruleDefCount             = 0
